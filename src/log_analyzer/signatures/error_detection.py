@@ -29,7 +29,7 @@ def _search_patterns_in_string(string, patterns):
 class MasterFailedToPullIgnitionSignature(ErrorSignature):
     """Finds clusters where master nodes failed to pull ignition."""
 
-    def analyze(self, log_analyzer) -> Optional[SignatureResult]:
+    def analyze(self, log_analyzer, signatures_only: bool = False) -> Optional[SignatureResult]:
         """Analyze master nodes ignition pull failures."""
         try:
             metadata = log_analyzer.metadata
@@ -68,7 +68,8 @@ class MasterFailedToPullIgnitionSignature(ErrorSignature):
                 return self.create_result(
                     title="Master Nodes Failed to Pull Ignition",
                     content=content,
-                    severity="error"
+                    severity="error",
+                    signatures_only=signatures_only
                 )
 
         except Exception as e:
@@ -79,7 +80,7 @@ class MasterFailedToPullIgnitionSignature(ErrorSignature):
 class SNOHostnameHasEtcd(ErrorSignature):
     """Looks for etcd in SNO hostname (OCPBUGS-15852)."""
 
-    def analyze(self, log_analyzer) -> Optional[SignatureResult]:
+    def analyze(self, log_analyzer, signatures_only: bool = False) -> Optional[SignatureResult]:
         """Analyze SNO hostname for etcd."""
         try:
             metadata = log_analyzer.metadata
@@ -98,7 +99,8 @@ class SNOHostnameHasEtcd(ErrorSignature):
                 return self.create_result(
                     title="No etcd in SNO hostname",
                     content=content,
-                    severity="error"
+                    severity="error",
+                    signatures_only=signatures_only
                 )
 
         except Exception as e:
@@ -112,7 +114,7 @@ class ApiInvalidCertificateSignature(ErrorSignature):
 
     LOG_PATTERN = re.compile('time=".*" level=error msg=".*x509: certificate is valid.* not .*')
 
-    def analyze(self, log_analyzer) -> Optional[SignatureResult]:
+    def analyze(self, log_analyzer, signatures_only: bool = False) -> Optional[SignatureResult]:
         try:
             controller_logs = log_analyzer.get_controller_logs()
         except FileNotFoundError:
@@ -129,6 +131,7 @@ class ApiInvalidCertificateSignature(ErrorSignature):
                 title="Invalid SAN values on certificate for AI API",
                 content=content,
                 severity="error",
+                signatures_only=signatures_only
             )
         return None
 
@@ -138,7 +141,7 @@ class ApiExpiredCertificateSignature(ErrorSignature):
 
     LOG_PATTERN = re.compile("x509: certificate has expired or is not yet valid.*")
 
-    def analyze(self, log_analyzer) -> Optional[SignatureResult]:
+    def analyze(self, log_analyzer, signatures_only: bool = False) -> Optional[SignatureResult]:
         new_logs_path = f"{NEW_LOG_BUNDLE_PATH}/bootstrap/containers/bootstrap-control-plane/kube-apiserver.log"
         old_logs_path = f"{OLD_LOG_BUNDLE_PATH}/bootstrap/containers/bootstrap-control-plane/kube-apiserver.log"
         for path in (new_logs_path, old_logs_path):
@@ -155,6 +158,7 @@ class ApiExpiredCertificateSignature(ErrorSignature):
                     title="Expired Certificate",
                     content=content,
                     severity="error",
+                    signatures_only=signatures_only
                 )
         return None
 
@@ -164,7 +168,7 @@ class ReleasePullErrorSignature(ErrorSignature):
 
     ERROR_PATTERN = re.compile(r"release-image-download\.sh\[.+\]: Pull failed")
 
-    def analyze(self, log_analyzer) -> Optional[SignatureResult]:
+    def analyze(self, log_analyzer, signatures_only: bool = False) -> Optional[SignatureResult]:
         try:
             cluster = log_analyzer.metadata["cluster"]
         except Exception:
@@ -185,6 +189,7 @@ class ReleasePullErrorSignature(ErrorSignature):
                 title="Release image cannot be pulled",
                 content="\n".join(hosts_sections),
                 severity="error",
+                signatures_only=signatures_only
             )
         return None
 
@@ -194,7 +199,7 @@ class ErrorOnCleanupInstallDevice(ErrorSignature):
 
     LOG_PATTERN = re.compile(r'msg="(?P<message>failed to prepare install device.*)"')
 
-    def analyze(self, log_analyzer) -> Optional[SignatureResult]:
+    def analyze(self, log_analyzer, signatures_only: bool = False) -> Optional[SignatureResult]:
         cluster = log_analyzer.metadata.get("cluster", {})
         hosts = []
         for host in cluster.get("hosts", []):
@@ -213,6 +218,7 @@ class ErrorOnCleanupInstallDevice(ErrorSignature):
                 title="Non-fatal error on cleanupInstallDevice",
                 content=content,
                 severity="warning",
+                signatures_only=signatures_only
             )
         return None
 
@@ -220,7 +226,7 @@ class ErrorOnCleanupInstallDevice(ErrorSignature):
 class MissingMC(ErrorSignature):
     """Looks for missing MachineConfig error in SNO clusters."""
 
-    def analyze(self, log_analyzer) -> Optional[SignatureResult]:
+    def analyze(self, log_analyzer, signatures_only: bool = False) -> Optional[SignatureResult]:
         cluster = log_analyzer.metadata.get("cluster", {})
         if cluster.get("high_availability_mode") != "None":
             return None
@@ -241,6 +247,7 @@ class MissingMC(ErrorSignature):
                 title="Missing MachineConfig issue",
                 content="Missing rendered MachineConfig issue detected",
                 severity="error",
+                signatures_only=signatures_only
             )
         return None
 
@@ -257,7 +264,7 @@ class ErrorCreatingReadWriteLayer(ErrorSignature):
             for containerStatus in pod.get("status", {}).get("containerStatuses", [])
         )
 
-    def analyze(self, log_analyzer) -> Optional[SignatureResult]:
+    def analyze(self, log_analyzer, signatures_only: bool = False) -> Optional[SignatureResult]:
         try:
             namespaces_dir = log_analyzer.logs_archive.get(
                 "controller_logs.tar.gz/must-gather.tar.gz/must-gather.local.*/*/namespaces"
@@ -287,5 +294,6 @@ class ErrorCreatingReadWriteLayer(ErrorSignature):
                 title="Error creating read-write layer - Bugzilla 1993243",
                 content="\n\n".join(messages),
                 severity="error",
+                signatures_only=signatures_only
             )
         return None

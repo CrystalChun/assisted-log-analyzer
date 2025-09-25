@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 class SNOMachineCidrSignature(Signature):
     """Validates machine CIDR configuration for SNO clusters."""
     
-    def analyze(self, log_analyzer) -> Optional[SignatureResult]:
+    def analyze(self, log_analyzer, signatures_only: bool = False) -> Optional[SignatureResult]:
         """Analyze SNO machine CIDR configuration."""
         try:
             metadata = log_analyzer.metadata
@@ -54,7 +54,8 @@ class SNOMachineCidrSignature(Signature):
                 signature_name=self.name,
                 title="Invalid Machine CIDR",
                 content=content,
-                severity="error"
+                severity="error",
+                signatures_only=signatures_only
             )
             
         except Exception as e:
@@ -64,7 +65,7 @@ class SNOMachineCidrSignature(Signature):
 class DuplicateVIP(ErrorSignature):
     """Looks for nodes holding the same VIP."""
     
-    def analyze(self, log_analyzer) -> Optional[SignatureResult]:
+    def analyze(self, log_analyzer, signatures_only: bool = False) -> Optional[SignatureResult]:
         """Analyze for duplicate VIP issues."""
         try:
             metadata = log_analyzer.metadata
@@ -155,6 +156,7 @@ class DuplicateVIP(ErrorSignature):
                     title="VIP found in multiple nodes",
                     content="\n".join(dup_msgs),
                     severity="error",
+                    signatures_only=signatures_only
                 )
             return None
             
@@ -199,7 +201,7 @@ class NameserverInClusterNetwork(ErrorSignature):
             pass
         return nameservers
 
-    def analyze(self, log_analyzer) -> Optional[SignatureResult]:
+    def analyze(self, log_analyzer, signatures_only: bool = False) -> Optional[SignatureResult]:
         md = log_analyzer.metadata
         cidrs = [network["cidr"] for network in md["cluster"].get("cluster_networks", [])]
         if not cidrs:
@@ -222,6 +224,7 @@ class NameserverInClusterNetwork(ErrorSignature):
                 title="Nameserver in internal network",
                 content="\n".join(sorted(set(report_lines))),
                 severity="error",
+                signatures_only=signatures_only
             )
         return None
 
@@ -233,7 +236,7 @@ class NetworksMtuMismatch(ErrorSignature):
         r"Failed to start sdn: interface MTU [(]([0-9]+)[)] is too small for specified overlay MTU [(]([0-9]+)[)]"
     )
 
-    def analyze(self, log_analyzer) -> Optional[SignatureResult]:
+    def analyze(self, log_analyzer, signatures_only: bool = False) -> Optional[SignatureResult]:
         path = (
             "controller_logs.tar.gz/must-gather.tar.gz/must-gather.local.*/*/namespaces/openshift-sdn/pods/sdn-*/sdn/sdn/logs/*.log"
         )
@@ -247,6 +250,7 @@ class NetworksMtuMismatch(ErrorSignature):
                 title="Networks MTU Mismatch",
                 content=f"SDN failed to start: Overlay (cluster) network MTU {m.group(2)} is bigger than the interface MTU {m.group(1)}",
                 severity="error",
+                signatures_only=signatures_only
             )
         return None
 
@@ -256,7 +260,7 @@ class DualStackBadRoute(ErrorSignature):
 
     fatal_error_regex = re.compile(r"^F.*failed to get default gateway interface$", re.MULTILINE)
 
-    def analyze(self, log_analyzer) -> Optional[SignatureResult]:
+    def analyze(self, log_analyzer, signatures_only: bool = False) -> Optional[SignatureResult]:
         for base in (NEW_LOG_BUNDLE_PATH, OLD_LOG_BUNDLE_PATH):
             path = f"{base}/control-plane/*/containers/ovnkube-node-*.log"
             try:
@@ -268,6 +272,7 @@ class DualStackBadRoute(ErrorSignature):
                     title="Bugzilla 2088346",
                     content="ovnkube-node logs indicate the cluster may be hitting BZ 2088346",
                     severity="error",
+                    signatures_only=signatures_only
                 )
         return None
 
@@ -275,7 +280,7 @@ class DualStackBadRoute(ErrorSignature):
 class DualstackrDNSBug(ErrorSignature):
     """Detect kube-apiserver 'must match public address family' message (MGMT-11651)."""
 
-    def analyze(self, log_analyzer) -> Optional[SignatureResult]:
+    def analyze(self, log_analyzer, signatures_only: bool = False) -> Optional[SignatureResult]:
         for base in (NEW_LOG_BUNDLE_PATH, OLD_LOG_BUNDLE_PATH):
             path = f"{base}/bootstrap/containers/kube-apiserver-*.log"
             try:
@@ -289,6 +294,7 @@ class DualstackrDNSBug(ErrorSignature):
                         "kube-apiserver logs contain the message 'must match public address family', this is probably due to MGMT-11651"
                     ),
                     severity="warning",
+                    signatures_only=signatures_only
                 )
         return None
 
@@ -298,7 +304,7 @@ class UserManagedNetworkingLoadBalancer(ErrorSignature):
 
     lb_operators = {"authentication", "console", "ingress"}
 
-    def analyze(self, log_analyzer) -> Optional[SignatureResult]:
+    def analyze(self, log_analyzer, signatures_only: bool = False) -> Optional[SignatureResult]:
         metadata = log_analyzer.metadata
         cluster_md = metadata.get("cluster", {})
 
@@ -332,6 +338,7 @@ class UserManagedNetworkingLoadBalancer(ErrorSignature):
                 title="Probably user managed load-balancer issues",
                 content=content,
                 severity="warning",
+                signatures_only=signatures_only
             )
 
         return None

@@ -22,7 +22,7 @@ class SlowImageDownloadSignature(ErrorSignature):
     )
     minimum_download_rate_mb = 10
 
-    def analyze(self, log_analyzer) -> Optional[SignatureResult]:
+    def analyze(self, log_analyzer, signatures_only: bool = False) -> Optional[SignatureResult]:
         """Analyze image download speeds."""
         try:
             metadata = log_analyzer.metadata
@@ -43,7 +43,8 @@ class SlowImageDownloadSignature(ErrorSignature):
                 return self.create_result(
                     title="Slow Image Download",
                     content=content,
-                    severity="warning"
+                    severity="warning",
+                    signatures_only=signatures_only
                 )
 
         except Exception as e:
@@ -73,7 +74,7 @@ class OSInstallationTimeSignature(Signature):
     class NoEventFound(Exception):
         pass
 
-    def analyze(self, log_analyzer) -> Optional[SignatureResult]:
+    def analyze(self, log_analyzer, signatures_only: bool = False) -> Optional[SignatureResult]:
         """Analyze OS installation time."""
         try:
             metadata = log_analyzer.metadata
@@ -96,7 +97,8 @@ class OSInstallationTimeSignature(Signature):
                     signature_name=self.name,
                     title="OS Installation Time Analysis",
                     content=content,
-                    severity="warning"
+                    severity="warning",
+                    signatures_only=signatures_only
                 )
 
         except Exception as e:
@@ -165,7 +167,7 @@ class InstallationDiskFIOSignature(Signature):
 
     fio_regex = re.compile(r"\(fdatasync duration:\s(\d+)\sms\)")
 
-    def analyze(self, log_analyzer) -> Optional[SignatureResult]:
+    def analyze(self, log_analyzer, signatures_only: bool = False) -> Optional[SignatureResult]:
         """Analyze disk FIO performance."""
         try:
             metadata = log_analyzer.metadata
@@ -206,7 +208,8 @@ class InstallationDiskFIOSignature(Signature):
                     signature_name=self.name,
                     title="Host Slow Installation Disks",
                     content=content,
-                    severity="warning"
+                    severity="warning",
+                    signatures_only=signatures_only
                 )
 
         except Exception as e:

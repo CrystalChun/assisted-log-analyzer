@@ -35,7 +35,7 @@ def setup_logging(verbose: bool = False) -> None:
 
 
 def analyze_cluster(
-    cluster_id: str, auth_token: Optional[str] = None, specific_signatures: Optional[List[str]] = None
+    cluster_id: str, auth_token: Optional[str] = None, specific_signatures: Optional[List[str]] = None, signatures_only: bool = False
 ) -> List[SignatureResult]:
     """
     Analyze a cluster's logs.
@@ -44,6 +44,7 @@ def analyze_cluster(
         cluster_id: UUID of the cluster to analyze
         auth_token: Authentication token for API access
         specific_signatures: List of specific signature names to run (None for all)
+        signatures_only: Whether to only show the signature name and title
 
     Returns:
         List of SignatureResult objects
@@ -78,7 +79,7 @@ def analyze_cluster(
             logger.debug(f"Running signature: {signature_class.__name__}")
             try:
                 signature = signature_class()
-                result = signature.analyze(log_analyzer)
+                result = signature.analyze(log_analyzer, signatures_only)
                 if result:
                     results.append(result)
             except Exception as e:
@@ -125,7 +126,7 @@ def main() -> int:
     )
 
     parser.add_argument("--signatures", nargs="+", help="Specific signatures to run (default: all signatures)")
-
+    parser.add_argument("--signatures-only", action="store_true", help="Only show the signature name and title")
     parser.add_argument("--list-signatures", action="store_true", help="List available signatures and exit")
 
     parser.add_argument("-v", "--verbose", action="store_true", help="Enable verbose logging")
@@ -146,7 +147,7 @@ def main() -> int:
     try:
         # Analyze the cluster
         results = analyze_cluster(
-            cluster_id=args.cluster_id, auth_token=args.auth_token, specific_signatures=args.signatures
+            cluster_id=args.cluster_id, auth_token=args.auth_token, specific_signatures=args.signatures, signatures_only=args.signatures_only
         )
 
         # Print results

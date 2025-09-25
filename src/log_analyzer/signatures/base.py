@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 class SignatureResult:
     """Result of a signature analysis."""
     
-    def __init__(self, signature_name: str, title: str, content: str = "", severity: str = "info"):
+    def __init__(self, signature_name: str, title: str, content: str = "", severity: str = "info", signatures_only: bool = False):
         """
         Initialize a signature result.
         
@@ -23,14 +23,21 @@ class SignatureResult:
             title: Title of the analysis
             content: Analysis content/report
             severity: Severity level (info, warning, error)
+            signatures_only: Whether to only show the signature name and title
         """
         self.signature_name = signature_name
         self.title = title
         self.content = content
         self.severity = severity
+
+        self.signatures_only = signatures_only
     
     def __str__(self) -> str:
         """String representation of the result."""
+        if self.signatures_only:
+            header = f"=== {self.signature_name} ==="
+            return f"{header}\n{self.title}"
+
         if not self.content:
             return ""
         
@@ -53,12 +60,13 @@ class Signature(abc.ABC):
         self.name = self.__class__.__name__
     
     @abc.abstractmethod
-    def analyze(self, log_analyzer) -> Optional[SignatureResult]:
+    def analyze(self, log_analyzer, signatures_only: bool = False) -> Optional[SignatureResult]:
         """
         Analyze the logs and return a result if relevant.
         
         Args:
             log_analyzer: LogAnalyzer instance with access to logs
+            signatures_only: Whether to only show the signature name and title
             
         Returns:
             SignatureResult if analysis finds something relevant, None otherwise
@@ -99,7 +107,7 @@ class ErrorSignature(Signature, abc.ABC):
         self._function_impact_label = function_impact_label
         self._label = label
     
-    def create_result(self, title: str, content: str, severity: str = "error") -> SignatureResult:
+    def create_result(self, title: str, content: str, severity: str = "error", signatures_only: bool = False) -> SignatureResult:
         """
         Create a SignatureResult with error severity by default.
         
@@ -115,5 +123,6 @@ class ErrorSignature(Signature, abc.ABC):
             signature_name=self.name,
             title=title,
             content=content,
-            severity=severity
+            severity=severity,
+            signatures_only=signatures_only
         )

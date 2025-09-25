@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 class LibvirtRebootFlagSignature(ErrorSignature):
     """Detect potential libvirt _on_reboot_ flag issue (MGMT-2840)."""
 
-    def analyze(self, log_analyzer) -> Optional[SignatureResult]:
+    def analyze(self, log_analyzer, signatures_only: bool = False) -> Optional[SignatureResult]:
         md = log_analyzer.metadata
         cluster = md["cluster"]
         # not relevant for SNO
@@ -51,6 +51,7 @@ class LibvirtRebootFlagSignature(ErrorSignature):
                 title="Potential hosts with libvirt _on_reboot_ flag issue (MGMT-2840)",
                 content=self.generate_table(hosts),
                 severity="warning",
+                signatures_only=signatures_only
             )
         return None
 
@@ -82,7 +83,7 @@ class IpChangedAfterReboot(ErrorSignature):
                             address_map[str(intf.ip)] = str(intf.network)
         return address_map
 
-    def analyze(self, log_analyzer) -> Optional[SignatureResult]:
+    def analyze(self, log_analyzer, signatures_only: bool = False) -> Optional[SignatureResult]:
         md = log_analyzer.metadata
         cluster = md["cluster"]
 
@@ -112,5 +113,6 @@ class IpChangedAfterReboot(ErrorSignature):
                                     f"Discovered address {addr} changed by leased address {match.group(1)} after reboot for host {host_id}"
                                 ),
                                 severity="warning",
+                                signatures_only=signatures_only
                             )
         return None

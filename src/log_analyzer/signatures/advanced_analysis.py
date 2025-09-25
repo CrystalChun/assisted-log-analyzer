@@ -66,7 +66,7 @@ logger = logging.getLogger(__name__)
 class EventsInstallationAttempts(Signature):
     """Inspects events file to check for multiple installation attempts."""
 
-    def analyze(self, log_analyzer) -> Optional[SignatureResult]:
+    def analyze(self, log_analyzer, signatures_only: bool = False) -> Optional[SignatureResult]:
         """Analyze multiple installation attempts."""
         try:
             metadata = log_analyzer.metadata
@@ -91,7 +91,8 @@ class EventsInstallationAttempts(Signature):
                         signature_name=self.name,
                         title="Multiple Installation Attempts in Events File",
                         content=content,
-                        severity="warning"
+                        severity="warning",
+                        signatures_only=signatures_only
                     )
 
         except Exception as e:
@@ -103,7 +104,7 @@ class EventsInstallationAttempts(Signature):
 class MissingMustGatherLogs(Signature):
     """Checks if must-gather logs are missing when they should be collected."""
 
-    def analyze(self, log_analyzer) -> Optional[SignatureResult]:
+    def analyze(self, log_analyzer, signatures_only: bool = False) -> Optional[SignatureResult]:
         """Analyze for missing must-gather logs."""
         try:
             metadata = log_analyzer.metadata
@@ -135,7 +136,8 @@ class MissingMustGatherLogs(Signature):
                         signature_name=self.name,
                         title="Missing Must-Gather Logs",
                         content=content,
-                        severity="error"
+                        severity="error",
+                        signatures_only=signatures_only
                     )
 
         except Exception as e:
@@ -151,7 +153,7 @@ class FlappingValidations(Signature):
     succeed_to_failing_regexp = re.compile(r"Host .+: validation '.+' that used to succeed is now failing")
     now_fixed_regexp = re.compile(r"Host .+: validation '.+' is now fixed")
 
-    def analyze(self, log_analyzer) -> Optional[SignatureResult]:
+    def analyze(self, log_analyzer, signatures_only: bool = False) -> Optional[SignatureResult]:
         """Analyze flapping validations."""
         try:
             from collections import Counter
@@ -191,7 +193,8 @@ class FlappingValidations(Signature):
                     signature_name=self.name,
                     title="Flapping Validations",
                     content=content,
-                    severity="warning"
+                    severity="warning",
+                    signatures_only=signatures_only
                 )
 
         except Exception as e:
@@ -202,7 +205,7 @@ class FlappingValidations(Signature):
 class NodeStatus(Signature):
     """Dump node statuses from installer gather nodes.json."""
 
-    def analyze(self, log_analyzer) -> Optional[SignatureResult]:
+    def analyze(self, log_analyzer, signatures_only: bool = False) -> Optional[SignatureResult]:
         for base in (NEW_LOG_BUNDLE_PATH, OLD_LOG_BUNDLE_PATH):
             path = f"{base}/resources/nodes.json"
             try:
@@ -236,6 +239,7 @@ class NodeStatus(Signature):
                     title="Collected nodes.json from installer gather",
                     content=self.generate_table(nodes_table),
                     severity="info",
+                    signatures_only=signatures_only
                 )
             else:
                 return SignatureResult(
@@ -245,6 +249,7 @@ class NodeStatus(Signature):
                         "The nodes.json file doesn't have any node resources in it. You should probably check the kubelet logs for the 2 non-bootstrap control-plane hosts"
                     ),
                     severity="warning",
+                    signatures_only=signatures_only
                 )
         return None
 
@@ -252,7 +257,7 @@ class NodeStatus(Signature):
 class ControllerWarnings(Signature):
     """Search for warnings in controller logs."""
 
-    def analyze(self, log_analyzer) -> Optional[SignatureResult]:
+    def analyze(self, log_analyzer, signatures_only: bool = False) -> Optional[SignatureResult]:
         try:
             controller_logs = log_analyzer.get_controller_logs()
         except FileNotFoundError:
@@ -268,6 +273,7 @@ class ControllerWarnings(Signature):
                 title="Controller warning logs",
                 content=content,
                 severity="warning",
+                signatures_only=signatures_only
             )
         return None
 
@@ -277,7 +283,7 @@ class UserHasLoggedIntoCluster(Signature):
 
     USER_LOGIN_PATTERN = re.compile(r"pam_unix\((sshd|login):session\): session opened for user .+ by")
 
-    def analyze(self, log_analyzer) -> Optional[SignatureResult]:
+    def analyze(self, log_analyzer, signatures_only: bool = False) -> Optional[SignatureResult]:
         cluster = log_analyzer.metadata.get("cluster", {})
         msgs = []
         for host in cluster.get("hosts", []):
@@ -296,6 +302,7 @@ class UserHasLoggedIntoCluster(Signature):
                 title="User has logged into cluster nodes during installation",
                 content="\n".join(msgs),
                 severity="warning",
+                signatures_only=signatures_only
             )
         return None
 
@@ -308,7 +315,7 @@ class FailedRequestTriggersHostTimeout(Signature):
     )
     HOST_TIMED_OUT_STATUS_INFO = "Host failed to install due to timeout while connecting to host"
 
-    def analyze(self, log_analyzer) -> Optional[SignatureResult]:
+    def analyze(self, log_analyzer, signatures_only: bool = False) -> Optional[SignatureResult]:
         cluster = log_analyzer.metadata.get("cluster", {})
         failed_requests_hosts = set()
         timed_out_hosts = {h["id"] for h in cluster.get("hosts", []) if h.get("status_info") == self.HOST_TIMED_OUT_STATUS_INFO}
@@ -329,6 +336,7 @@ class FailedRequestTriggersHostTimeout(Signature):
                 title="Failed request triggering host timeout",
                 content=content,
                 severity="warning",
+                signatures_only=signatures_only
             )
         if failed_requests_hosts and timed_out_hosts:
             return SignatureResult(
@@ -338,6 +346,7 @@ class FailedRequestTriggersHostTimeout(Signature):
                     f"Cluster has at least one host that failed requests ({', '.join(sorted(failed_requests_hosts))}) and at least one host that timed out ({', '.join(sorted(timed_out_hosts))})"
                 ),
                 severity="warning",
+                signatures_only=signatures_only
             )
         return None
 
@@ -345,7 +354,7 @@ class FailedRequestTriggersHostTimeout(Signature):
 class ControllerFailedToStart(Signature):
     """Looks for controller readiness in pods.json when bootstrap is 'Waiting for controller'."""
 
-    def analyze(self, log_analyzer) -> Optional[SignatureResult]:
+    def analyze(self, log_analyzer, signatures_only: bool = False) -> Optional[SignatureResult]:
         cluster = log_analyzer.metadata.get("cluster", {})
         bootstrap = [h for h in cluster.get("hosts", []) if h.get("bootstrap")] or []
         if not bootstrap:
@@ -384,6 +393,7 @@ class ControllerFailedToStart(Signature):
                 title="Assisted Installer Controller failed to start",
                 content=content,
                 severity="warning",
+                signatures_only=signatures_only
             )
         return None
 
@@ -393,7 +403,7 @@ class MachineConfigDaemonErrorExtracting(Signature):
 
     mco_error = re.compile(r"must be empty, pass --confirm to overwrite contents of directory$", re.MULTILINE)
 
-    def analyze(self, log_analyzer) -> Optional[SignatureResult]:
+    def analyze(self, log_analyzer, signatures_only: bool = False) -> Optional[SignatureResult]:
         for base in (NEW_LOG_BUNDLE_PATH, OLD_LOG_BUNDLE_PATH):
             path = f"{base}/control-plane/*/journals/machine-config-daemon-firstboot.log"
             try:
@@ -408,6 +418,7 @@ class MachineConfigDaemonErrorExtracting(Signature):
                         "machine-config-daemon-firstboot logs indicate a node may be hitting OCPBUGS-5352"
                     ),
                     severity="warning",
+                    signatures_only=signatures_only
                 )
         return None
 

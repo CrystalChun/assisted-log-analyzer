@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 class HostsStatusSignature(Signature):
     """Analyzes host status and progress."""
 
-    def analyze(self, log_analyzer) -> Optional[SignatureResult]:
+    def analyze(self, log_analyzer, signatures_only: bool = False) -> Optional[SignatureResult]:
         """Analyze host status."""
         try:
             metadata = log_analyzer.metadata
@@ -67,7 +67,8 @@ class HostsStatusSignature(Signature):
                 signature_name=self.name,
                 title="Installation Status",
                 content="\n".join(summary_content),
-                severity="info"
+                severity="info",
+                signatures_only=signatures_only
             )
 
         except Exception as e:
@@ -109,7 +110,7 @@ class HostsStatusSignature(Signature):
 class ComponentsVersionSignature(Signature):
     """Analyzes component versions."""
 
-    def analyze(self, log_analyzer) -> Optional[SignatureResult]:
+    def analyze(self, log_analyzer, signatures_only: bool = False) -> Optional[SignatureResult]:
         """Analyze component versions."""
         try:
             metadata = log_analyzer.metadata
@@ -134,7 +135,8 @@ class ComponentsVersionSignature(Signature):
                     signature_name=self.name,
                     title="Component Version Information",
                     content="\n".join(content_lines),
-                    severity="info"
+                    severity="info",
+                    signatures_only=signatures_only
                 )
 
         except Exception as e:
@@ -146,7 +148,7 @@ class ComponentsVersionSignature(Signature):
 class FailureDescription(Signature):
     """Generates failure description with cluster information."""
 
-    def analyze(self, log_analyzer) -> Optional[SignatureResult]:
+    def analyze(self, log_analyzer, signatures_only: bool = False) -> Optional[SignatureResult]:
         """Analyze and format cluster failure description."""
         try:
             metadata = log_analyzer.metadata
@@ -177,7 +179,8 @@ class FailureDescription(Signature):
                 signature_name=self.name,
                 title="Cluster Failure Description",
                 content=content,
-                severity="info"
+                severity="info",
+                signatures_only=signatures_only
             )
 
         except Exception as e:
@@ -188,7 +191,7 @@ class FailureDescription(Signature):
 class HostsExtraDetailSignature(Signature):
     """Provides extra details about hosts."""
 
-    def analyze(self, log_analyzer) -> Optional[SignatureResult]:
+    def analyze(self, log_analyzer, signatures_only: bool = False) -> Optional[SignatureResult]:
         """Analyze host extra details."""
         try:
             metadata = log_analyzer.metadata
@@ -215,7 +218,8 @@ class HostsExtraDetailSignature(Signature):
                 signature_name=self.name,
                 title="Host Extra Details",
                 content=content,
-                severity="info"
+                severity="info",
+                signatures_only=signatures_only
             )
 
         except Exception as e:
@@ -226,7 +230,7 @@ class HostsExtraDetailSignature(Signature):
 class HostsInterfacesSignature(Signature):
     """Analyzes host network interfaces."""
 
-    def analyze(self, log_analyzer) -> Optional[SignatureResult]:
+    def analyze(self, log_analyzer, signatures_only: bool = False) -> Optional[SignatureResult]:
         """Analyze host interfaces."""
         try:
             metadata = log_analyzer.metadata
@@ -250,7 +254,8 @@ class HostsInterfacesSignature(Signature):
                 signature_name=self.name,
                 title="Host Interfaces",
                 content=content,
-                severity="info"
+                severity="info",
+                signatures_only=signatures_only
             )
 
         except Exception as e:
@@ -279,7 +284,7 @@ class HostsInterfacesSignature(Signature):
 class StorageDetailSignature(Signature):
     """Analyzes host storage details."""
 
-    def analyze(self, log_analyzer) -> Optional[SignatureResult]:
+    def analyze(self, log_analyzer, signatures_only: bool = False) -> Optional[SignatureResult]:
         """Analyze host storage details."""
         try:
             metadata = log_analyzer.metadata
@@ -324,7 +329,8 @@ class StorageDetailSignature(Signature):
                 signature_name=self.name,
                 title="Host Storage Details",
                 content=content,
-                severity="info"
+                severity="info",
+                signatures_only=signatures_only
             )
 
         except Exception as e:
