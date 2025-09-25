@@ -117,7 +117,7 @@ Use `analyze-openshift-logs --list-signatures` to see exactly which signatures a
 ### Networking
 
 - `SNOMachineCidrSignature`: Validates machine CIDR configuration for SNO clusters.
-- `NonstandardNetworkType`: Warns about non-standard cluster network types.
+- `StaticNetworking`: Notes infraenvs that use static network configuration.
 - `DuplicateVIP`: Finds API/ingress VIP collisions across hosts.
 - `NameserverInClusterNetwork`: Detects nameservers that overlap cluster networks.
 - `NetworksMtuMismatch`: Reports MTU mismatches between interfaces and the overlay.
