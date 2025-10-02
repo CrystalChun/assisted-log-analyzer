@@ -1,3 +1,4 @@
+# there's an error in here ERROR      Error running signature IpChangedAfterReboot: Expecting ',' delimiter: line 1 column 330 (char 329)
 """
 Platform-specific signatures for OpenShift Assisted Installer logs.
 These signatures analyze issues specific to certain platforms or virtualization technologies.

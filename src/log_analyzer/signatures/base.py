@@ -35,8 +35,7 @@ class SignatureResult:
     def __str__(self) -> str:
         """String representation of the result."""
         if self.signatures_only:
-            header = f"=== {self.signature_name} ==="
-            return f"{header}\n{self.title}"
+            return f"{self.signature_name}"
 
         if not self.content:
             return ""
