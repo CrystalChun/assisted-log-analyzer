@@ -192,7 +192,7 @@ class LogAnalyzer:
     def get_must_gather(self) -> bytes:
         """Get must-gather logs."""
         try:
-            return self.logs_archive.get("controller_logs.tar.gz/must-gather.tar.gz", mode="rb")
+            return self.logs_archive.get("controller_logs.tar.gz", mode="rb")
         except FileNotFoundError:
             raise FileNotFoundError("Could not find must-gather logs")
 
